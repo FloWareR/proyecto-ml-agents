@@ -1,11 +1,21 @@
+using Unity.VisualScripting;
 using UnityEngine;
     public class FriendlyTarget : MonoBehaviour
     {
         public float maxHp = 100f;
         public float currentHp;
+        public static FriendlyTarget Instance { get; private set; } 
 
         private void Start()
         {
+        if (Instance == null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
             currentHp = maxHp;
         }
 
