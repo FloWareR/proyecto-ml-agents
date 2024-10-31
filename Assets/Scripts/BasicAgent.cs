@@ -3,60 +3,67 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
+using Unity.VisualScripting;
 using Random = UnityEngine.Random;
-
 
 public class MoveToTargetAgent : Agent
 {
-    [SerializeField] private Transform target;
-    [SerializeField] private Transform env;
-    [SerializeField] private float moveSpeed;
-    private Rigidbody m_Rigidbody; 
-    private void Start()
-    {
-        m_Rigidbody = GetComponent<Rigidbody>();
-    }
+   [SerializeField] private float moveSpeed;
+   [SerializeField] private float jumpForce;
+   [SerializeField] private Transform target;
+   
 
-    public override void OnEpisodeBegin()
-    {
-        //Set initial position & rotation
-        transform.localPosition = new Vector3(Random.Range(-4.5f, 4.5f), 0.5f,Random.Range(-4.5f, 4.5f));
-        target.localPosition = new Vector3(Random.Range(-4.5f, 4.5f), 0.5f,Random.Range(-4.5f, 4.5f));
-        transform.rotation = Quaternion.identity;
+   private Rigidbody _rigidbody;
+   private bool isGrounded; 
+   
+   public override void Initialize()
+   {
+      _rigidbody = GetComponent<Rigidbody>();
+   }
 
-        //Set rigidbody to zero 
-        m_Rigidbody.velocity = Vector3.zero;
-        m_Rigidbody.angularVelocity = Vector3.zero;
-    }
+   public override void OnEpisodeBegin()
+   {
+      transform.localPosition = new Vector3(Random.Range(-4.5f, 4.5f), 0.5f, Random.Range(-6f, 4.5f));
+      target.localPosition = new Vector3(Random.Range(-4.5f, 4.5f), 0.5f, Random.Range(7f, 19));
 
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        sensor.AddObservation((Vector3)m_Rigidbody.velocity); 
-        sensor.AddObservation((Vector3)target.localPosition);
-        sensor.AddObservation((Vector3)transform.localPosition);
-    }
+      _rigidbody.velocity = Vector3.zero;
+      _rigidbody.angularVelocity = Vector3.zero;
+      isGrounded = true;
+   }
 
-    public override void OnActionReceived(ActionBuffers actions)
-    {
-        var moveX = actions.ContinuousActions[0];
-        var moveZ = actions.ContinuousActions[1];
-        var force = new Vector3(moveX, 0, moveZ) * moveSpeed;
-        
-        m_Rigidbody.AddForce(force);
-    }
+   public override void CollectObservations(VectorSensor sensor)
+   {
+      sensor.AddObservation(target.localPosition);
+      sensor.AddObservation(transform.position);
+      sensor.AddObservation(_rigidbody.velocity);
+      sensor.AddObservation(transform.rotation);
+   }
 
-    public void OnTriggerEnter(Collider collision)
-    {
-        if (!collision.TryGetComponent(out AgentTarget targetScript)) return;
-        AddReward(5f);
-        EndEpisode();
-        Debug.Log("I DID IT");
-    }
+   public override void OnActionReceived(ActionBuffers actions)
+   {
+      var moveForward = actions.ContinuousActions[0];
+      var moveRotate = actions.ContinuousActions[1];
+      
+      _rigidbody.MovePosition(transform.position + transform.forward *(moveForward * moveSpeed * Time.deltaTime));
+      transform.Rotate(0f, moveRotate * moveSpeed, 0f, Space.Self);
+      
+      
+      AddReward(-0.05f);
+   }
 
-    public void OnTriggerExit(Collider collision)
-    {
-        if (!collision.TryGetComponent(out Wall envTrigger)) return;
-        AddReward(-10f);
-        EndEpisode();
-    }
+   private void OnCollisionEnter(Collision other)
+   {
+      if (!other.gameObject.TryGetComponent(out Enviroment envScript)) return;
+
+      AddReward(-10);
+      EndEpisode();
+   }
+
+   private void OnTriggerEnter(Collider other)
+   {
+      if (!other.TryGetComponent(out AgentTarget targetScript)) return;
+      
+      AddReward(10f);
+      EndEpisode();
+   }
 }
