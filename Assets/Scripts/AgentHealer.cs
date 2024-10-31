@@ -21,14 +21,12 @@ public class HealerAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        // Optionally reset the health of all targets at the beginning of each episode
         foreach (var targetData in targetManager.targets)
         {
             targetData.currentHP = targetData.maxHP;
-            Debug.Log(targetData.currentHP);
         }
         
-        transform.localPosition = new Vector3(0, 0.5f, 0);  // Reset agent position
+        transform.localPosition = new Vector3(0, 0.4f, 0);  
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -60,7 +58,7 @@ public class HealerAgent : Agent
         {
             MoveTowardsTarget(targetData);
         }
-        else if (moveOrHeal == 1 && Vector3.Distance(transform.position, targetData.position) <= healingRange)
+        else if (moveOrHeal == 1 && Vector3.Distance(transform.localPosition, targetData.position) <= healingRange)
         {
             HealTarget(targetData);
         }

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 public class TargetManager : MonoBehaviour
 {
-    public List<FriendlyTargetData> targets;  // Assign all FriendlyTargetData instances here in the Inspector
+    public List<FriendlyTargetData> targets; 
 
     private void Awake()
     {
-        // Ensure the targets list is populated in the Inspector with each target's FriendlyTargetData
+
     }
 
     public FriendlyTargetData GetLowestHPTargetData()
