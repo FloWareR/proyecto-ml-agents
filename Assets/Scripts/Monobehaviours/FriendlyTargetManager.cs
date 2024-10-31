@@ -1,12 +1,29 @@
-using System.Collections.Generic;
 using UnityEngine;
-public class FriendlyTargetManager : MonoBehaviour
+using System.Collections.Generic;
+
+public class TargetManager : MonoBehaviour
 {
-    public List<FriendlyTarget> friendlyTargets;
+    public List<FriendlyTargetData> targets; 
 
     private void Awake()
     {
-        //Add all targets to a list
-        friendlyTargets = new List<FriendlyTarget>(FindObjectsByType<FriendlyTarget>(FindObjectsSortMode.None));
+
+    }
+
+    public FriendlyTargetData GetLowestHPTargetData()
+    {
+        FriendlyTargetData lowestHPTarget = null;
+        float lowestHP = float.MaxValue;
+
+        foreach (var target in targets)
+        {
+            if (target.currentHP > 0 && target.currentHP < lowestHP)
+            {
+                lowestHP = target.currentHP;
+                lowestHPTarget = target;
+            }
+        }
+
+        return lowestHPTarget;
     }
 }

@@ -1,36 +1,30 @@
-using Unity.VisualScripting;
 using UnityEngine;
-    public class FriendlyTarget : MonoBehaviour
+
+public class FriendlyTarget : MonoBehaviour
+{
+    public FriendlyTargetData targetData;  // Assign a unique ScriptableObject instance in the Inspector
+    public float maxHP = 100f;
+
+    private void Start()
     {
-        public float maxHp = 100f;
-        public float currentHp;
-        public static FriendlyTarget Instance { get; private set; } 
+        targetData.maxHP = maxHP;
+        targetData.currentHP = maxHP;
+        targetData.position = transform.position;
+    }
 
-        private void Start()
-        {
-        if (Instance == null && Instance != this)
-        {
-            Destroy(this);
-        }
-        else
-        {
-            Instance = this;
-        }
-            currentHp = maxHp;
-        }
+    private void Update()
+    {
+        // Update position and currentHP in the targetData to keep it up-to-date
+        targetData.position = transform.position;
+    }
 
-        public void TakeDamage(float damage)
-        {
-            currentHp = Mathf.Max(0, currentHp - damage);
-        }
+    public void TakeDamage(float amount)
+    {
+        targetData.currentHP = Mathf.Max(0, targetData.currentHP - amount);
+    }
 
-        public bool IsAlive()
-        {
-            return currentHp > 0;
-        }
-
-        public void Heal(float healAmount)
-        {
-            currentHp = Mathf.Min(maxHp, currentHp + healAmount); 
-        }
+    public void Heal(float amount)
+    {
+        targetData.currentHP = Mathf.Min(targetData.maxHP, targetData.currentHP + amount);
+    }
 }
