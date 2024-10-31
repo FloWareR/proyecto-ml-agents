@@ -799,9 +799,9 @@ GameObject:
   - component: {fileID: 6975093292975007845}
   - component: {fileID: 19249930023977496}
   - component: {fileID: 2151784931287629856}
+  - component: {fileID: 3281579935310451515}
   - component: {fileID: 8284764997918526113}
   - component: {fileID: 389984279701256319}
-  - component: {fileID: 7774581919396903227}
   m_Layer: 0
   m_Name: Agent
   m_TagString: Untagged
@@ -818,7 +818,7 @@ Transform:
   m_GameObject: {fileID: 7075752118627375950}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 10.78}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -838,14 +838,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 2
+    VectorObservationSize: 13
     NumStackedVectorObservations: 1
     m_ActionSpec:
-      m_NumContinuousActions: 0
-      BranchSizes: 0100000002000000
-    VectorActionSize: 0100000002000000
+      m_NumContinuousActions: 2
+      BranchSizes: 
+    VectorActionSize: 02000000
     VectorActionDescriptions: []
-    VectorActionSpaceType: 0
+    VectorActionSpaceType: 1
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
@@ -871,6 +871,25 @@ MonoBehaviour:
   DecisionPeriod: 5
   DecisionStep: 0
   TakeActionsBetweenDecisions: 1
+--- !u!114 &3281579935310451515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7075752118627375950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2057ef41691ba14a89ff7a15d557514, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentParameters:
+    maxStep: 0
+  hasUpgradedFromAgentParameters: 1
+  MaxStep: 0
+  moveSpeed: 5.5
+  jumpForce: 7
+  target: {fileID: 8369101841356424548}
 --- !u!54 &8284764997918526113
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -919,25 +938,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.6
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7774581919396903227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7075752118627375950}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b9e1e90c7d2cd1409157db96147d812, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  agentParameters:
-    maxStep: 0
-  hasUpgradedFromAgentParameters: 1
-  MaxStep: 0
-  healingAmount: 10
-  moveSpeed: 3
-  healingRange: 2
 --- !u!1 &7096020748185496746
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,9 +1098,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8440417372001214399}
-  - component: {fileID: 3582836793034440099}
   m_Layer: 0
-  m_Name: Env
+  m_Name: Env_Examen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1127,20 +1126,6 @@ Transform:
   - {fileID: 2789526576808208756}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3582836793034440099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842518157085632648}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 77211be3a4803db4885bdf676167db9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  friendlyTargets:
-  - {fileID: 3890066473821090131}
 --- !u!1 &9032584307042682415
 GameObject:
   m_ObjectHideFlags: 0
@@ -1154,7 +1139,6 @@ GameObject:
   - component: {fileID: 436725331111284703}
   - component: {fileID: 9093678596847025613}
   - component: {fileID: 1741947138730026012}
-  - component: {fileID: 3890066473821090131}
   m_Layer: 0
   m_Name: Target
   m_TagString: Target
@@ -1171,7 +1155,7 @@ Transform:
   m_GameObject: {fileID: 9032584307042682415}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.01, y: 0.03, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1262,17 +1246,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3890066473821090131
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9032584307042682415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0886e9076d7eda74689b8f0160d6abea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHp: 100
-  currentHp: 0
