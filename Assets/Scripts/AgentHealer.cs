@@ -1,6 +1,6 @@
 using Unity.MLAgents;
-using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 public class HealerAgent : Agent
@@ -9,7 +9,9 @@ public class HealerAgent : Agent
     public float moveSpeed = 3f;
     public float healingRange = 2f;
     
-    public TargetManager targetManager;  // Assign TargetManager in the Inspector
+    public TargetManager targetManager;  // Reference to TargetManager
+
+    private int selectedTargetIndex = 0;  // Default target index
 
     public override void Initialize()
     {
@@ -26,39 +28,36 @@ public class HealerAgent : Agent
             targetData.currentHP = targetData.maxHP;
         }
         
-        transform.localPosition = new Vector3(0, 0.4f, 0);  
+        transform.position = new Vector3(0f, 0.4f, 0f);
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        sensor.AddObservation(transform.localPosition.x);
-        sensor.AddObservation(transform.localPosition.z);
-        
         foreach (var targetData in targetManager.targets)
         {
             Vector3 relativePosition = targetData.position - transform.position;
             sensor.AddObservation(relativePosition.x);
             sensor.AddObservation(relativePosition.z);
-            sensor.AddObservation(targetData.NormalizedHP);  
+            sensor.AddObservation(targetData.NormalizedHP);
         }
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        // Agent actions: select target and decide to move or heal
-        int targetIndex = Mathf.FloorToInt(actions.DiscreteActions[0]);
-        int moveOrHeal = Mathf.FloorToInt(actions.DiscreteActions[1]);
+        int targetIndex = actions.DiscreteActions[0]; // Select target index
+        int moveOrHeal = actions.DiscreteActions[1];  // Move (0) or heal (1)
+        // Ensure the target index is valid
+        if (targetIndex < 0 || targetIndex >= targetManager.targets.Count) return;
 
-        if (targetIndex < 0 || targetIndex >= targetManager.targets.Count)
-            return;
-
+        // Retrieve the selected target's data
         var targetData = targetManager.targets[targetIndex];
 
+        // Execute the chosen action
         if (moveOrHeal == 0)
         {
             MoveTowardsTarget(targetData);
         }
-        else if (moveOrHeal == 1 && Vector3.Distance(transform.localPosition, targetData.position) <= healingRange)
+        else if (moveOrHeal == 1 && Vector3.Distance(transform.position, targetData.position) <= healingRange)
         {
             HealTarget(targetData);
         }
@@ -78,9 +77,24 @@ public class HealerAgent : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // Optional: provide heuristic control for testing
         var discreteActionsOut = actionsOut.DiscreteActions;
-        discreteActionsOut[0] = 0; // Select the first target by default
-        discreteActionsOut[1] = 0; // Move action
+
+        // **Target Selection** using 1, 2, 3 keys
+        if (Input.GetKey(KeyCode.Alpha1)) selectedTargetIndex = 0;
+        if (Input.GetKey(KeyCode.Alpha2)) selectedTargetIndex = 1;
+        if (Input.GetKey(KeyCode.Alpha3)) selectedTargetIndex = 2;
+
+        // Set the target index based on selection
+        discreteActionsOut[0] = selectedTargetIndex;
+
+        // **Move or Heal** based on W and S keys
+        if (Input.GetKey(KeyCode.W))
+        {
+            discreteActionsOut[1] = 0;  // Move action
+        }
+        else if (Input.GetKey(KeyCode.S))
+        {
+            discreteActionsOut[1] = 1;  // Heal action
+        }
     }
 }
