@@ -35,9 +35,9 @@ public class NavigationAgent : Agent
 
         // Randomize target position within a specific range
         target.localPosition = initialTargetPosition + new Vector3(
-            UnityEngine.Random.Range(-20f, 20f),
+            UnityEngine.Random.Range(-10f, 10f),
             0,
-            UnityEngine.Random.Range(-20f, 20f)
+            UnityEngine.Random.Range(-10f, 10f)
         );
     }
 
@@ -65,19 +65,26 @@ public class NavigationAgent : Agent
         // Pass the agent's actions to the InputManager to control movement
         inputManager.SetAgentInputs(horizontal, vertical, cameraX, cameraY);
 
+        float objective = Vector3.Distance(this.gameObject.transform.localPosition, target.transform.localPosition);
+
         // Small penalty for each step to encourage efficient movement
         SetReward(-0.001f);
 
         // Penalty for falling off the platform (simulating no ground below agent)
         if (transform.localPosition.y < 0)
         {
-            SetReward(-1.0f);  // Heavy penalty for falling
+            SetReward(-3.0f);  // Heavy penalty for falling
+            EndEpisode();
+        }
+        if(objective < 1.42f)
+        {
+            SetReward(1.0f);  // Large reward for reaching the target
             EndEpisode();
         }
     }
 
     // Trigger detection for reaching the target
-    private void OnTriggerEnter(Collider other)
+/*    private void OnTriggerEnter(Collider other)
     {
         // Check if the collided object is the target
         if (other.CompareTag("Target"))
@@ -85,7 +92,7 @@ public class NavigationAgent : Agent
             SetReward(1.0f);  // Large reward for reaching the target
             EndEpisode();
         }
-    }
+    }*/
 
     // Manual control for testing purposes
     public override void Heuristic(in ActionBuffers actionsOut)
