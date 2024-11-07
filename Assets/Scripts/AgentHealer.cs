@@ -3,84 +3,88 @@ using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using UnityEngine;
 
-public class HealerAgent : Agent
+public class WalkingAgent : Agent
 {
-    public float healingAmount = 10f;
-    public float moveSpeed = 3f;
-    public float healingRange = 2f;
-    
-    public TargetManager targetManager;  // Assign TargetManager in the Inspector
+    public Transform[] targets; // Array of target GameObjects
+    public float moveSpeed = 10f; // Force applied for movement
+    public float maxStepTime = 200f; // Steps allowed to reach each target
+
+    private int currentTargetIndex = 0; // Index of the current target
+    private float stepsTaken = 0f; // Counter for steps taken
+    private Rigidbody rb; // Reference to the agent's Rigidbody
 
     public override void Initialize()
     {
-        if (targetManager == null)
-        {
-            Debug.LogError("TargetManager is not assigned in the Inspector!");
-        }
+        // Get the Rigidbody component
+        rb = GetComponent<Rigidbody>();
     }
 
     public override void OnEpisodeBegin()
     {
-        foreach (var targetData in targetManager.targets)
-        {
-            targetData.currentHP = targetData.maxHP;
-        }
-        
-        transform.localPosition = new Vector3(0, 0.4f, 0);  
+        // Reset the agent's position and rotation
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        transform.localPosition = new Vector3(0f, 0.5f, 0f);
+        transform.rotation = Quaternion.identity;
+
+        // Choose the first target and reset steps
+        currentTargetIndex = 0;
+        stepsTaken = 0;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        sensor.AddObservation(transform.localPosition.x);
-        sensor.AddObservation(transform.localPosition.z);
-        
-        foreach (var targetData in targetManager.targets)
+        // Add the agent's position and the position of the current target as observations
+        sensor.AddObservation(transform.localPosition);
+        sensor.AddObservation(targets[currentTargetIndex].localPosition);
+    }
+
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        // Apply continuous force for movement
+        Vector3 moveDirection = new Vector3(actionBuffers.ContinuousActions[0], 0, actionBuffers.ContinuousActions[1]);
+        rb.AddForce(moveDirection * moveSpeed, ForceMode.VelocityChange);
+
+        // Increment steps taken
+        stepsTaken += 1f;
+
+        // Apply small time penalty for each step
+        AddReward(-0.001f);
+
+        // End episode if taking too long
+        if (stepsTaken >= maxStepTime)
         {
-            Vector3 relativePosition = targetData.position - transform.position;
-            sensor.AddObservation(relativePosition.x);
-            sensor.AddObservation(relativePosition.z);
-            sensor.AddObservation(targetData.NormalizedHP);  
+            AddReward(-0.5f); // Penalty for inefficiency
+            EndEpisode();
         }
     }
 
-    public override void OnActionReceived(ActionBuffers actions)
+    private void OnCollisionEnter(Collision collision)
     {
-        // Agent actions: select target and decide to move or heal
-        int targetIndex = Mathf.FloorToInt(actions.DiscreteActions[0]);
-        int moveOrHeal = Mathf.FloorToInt(actions.DiscreteActions[1]);
-
-        if (targetIndex < 0 || targetIndex >= targetManager.targets.Count)
-            return;
-
-        var targetData = targetManager.targets[targetIndex];
-
-        if (moveOrHeal == 0)
+        // Check if the agent collided with the current target
+        if (collision.transform == targets[currentTargetIndex])
         {
-            MoveTowardsTarget(targetData);
+            Debug.Log("LOL");
+            AddReward(1.0f); // Reward for reaching the target
+            stepsTaken = 0f; // Reset step count for the next target
+
+            // Move to the next target
+            currentTargetIndex = (currentTargetIndex + 1) % targets.Length;
         }
-        else if (moveOrHeal == 1 && Vector3.Distance(transform.localPosition, targetData.position) <= healingRange)
+        // Check if the agent collided with a wall
+        else if (collision.transform.CompareTag("Wall"))
         {
-            HealTarget(targetData);
+            Debug.Log("Lose points");
+
+            AddReward(-0.5f); // Penalty for colliding with a wall
         }
-    }
-
-    private void MoveTowardsTarget(FriendlyTargetData targetData)
-    {
-        Vector3 direction = (targetData.position - transform.position).normalized;
-        transform.position += direction * (moveSpeed * Time.deltaTime);
-    }
-
-    private void HealTarget(FriendlyTargetData targetData)
-    {
-        targetData.currentHP = Mathf.Min(targetData.maxHP, targetData.currentHP + healingAmount);
-        AddReward(1.0f);  // Reward for healing
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // Optional: provide heuristic control for testing
-        var discreteActionsOut = actionsOut.DiscreteActions;
-        discreteActionsOut[0] = 0; // Select the first target by default
-        discreteActionsOut[1] = 0; // Move action
+        // Define manual control for testing
+        var continuousActions = actionsOut.ContinuousActions;
+        continuousActions[0] = Input.GetAxis("Horizontal");
+        continuousActions[1] = Input.GetAxis("Vertical");
     }
 }

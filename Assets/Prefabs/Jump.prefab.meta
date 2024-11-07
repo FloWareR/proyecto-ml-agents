@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6dc27ea6bca9730489b36207af0c7d64
+timeCreated: 1585278459
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168372
+  packageName: POLYGON Particle FX - Low Poly 3D Art by Synty
+  packageVersion: 1.03
+  assetPath: Assets/PolygonParticleFX/Prefabs/FX_Cartoony_Jump_Up_01.prefab
+  uploadId: 642177
