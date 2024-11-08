@@ -58,9 +58,11 @@ public class AgentJump : Agent
         float turn = turnInput * turnSpeed * Time.deltaTime;
         rb.MoveRotation(rb.rotation * Quaternion.Euler(0, turn, 0));
 
+        AddReward(-0.1f * Time.deltaTime);
+
         if (transform.localPosition.y < fallThreshold)
         {
-            SetReward(-5f);
+            SetReward(-8f);
             EndEpisode();
         }
 
@@ -110,11 +112,12 @@ public class AgentJump : Agent
                 AddReward(1.0f * rewardMultiplier);
 
                 // Incrementa el multiplicador exponencialmente (por ejemplo, multiplicando por 1.5)
-                rewardMultiplier *= 1.5f;
+                rewardMultiplier *= 2f;
 
                 currentCheckpointIndex++;
                 target.localPosition = checkpoints[currentCheckpointIndex].localPosition;
                 hasJumped = false;
+                print("Target reached" + rewardMultiplier);
             }
             else
             {
@@ -125,7 +128,7 @@ public class AgentJump : Agent
         }
         else if (other.CompareTag("Obstacle"))
         {
-            AddReward(-3.0f);
+            AddReward(-2.0f);
             EndEpisode();
         }
     }
