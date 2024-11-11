@@ -18,8 +18,7 @@ public class AgentJump : Agent
     private bool isOnPlatform = false;
 
     public float fallThreshold = -1.0f;
-
-    private float rewardMultiplier = 1.0f; // Multiplicador de recompensa inicial
+    private float rewardMultiplier = 1.0f;
 
     public override void Initialize()
     {
@@ -32,12 +31,11 @@ public class AgentJump : Agent
         rb.angularVelocity = Vector3.zero;
         transform.localPosition = new Vector3(0, 0.5f, -8);
 
-        // Reiniciar los valores
         currentCheckpointIndex = 0;
         target.localPosition = checkpoints[currentCheckpointIndex].localPosition;
         hasJumped = false;
         isOnPlatform = false;
-        rewardMultiplier = 1.0f; // Reiniciar el multiplicador de recompensa al inicio del episodio
+        rewardMultiplier = 1.0f;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -51,6 +49,7 @@ public class AgentJump : Agent
     {
         float moveInput = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f);
         float turnInput = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f);
+        int jumpAction = actions.DiscreteActions[0]; // Acción discreta para el salto (0 = no saltar, 1 = saltar)
 
         Vector3 forwardMove = transform.forward * moveInput * moveSpeed * Time.deltaTime;
         rb.MovePosition(rb.position + forwardMove);
@@ -62,20 +61,27 @@ public class AgentJump : Agent
 
         if (transform.localPosition.y < fallThreshold)
         {
-            SetReward(-8f);
+            SetReward(-2f);
             EndEpisode();
         }
 
         float distanceToTarget = Vector3.Distance(transform.localPosition, target.localPosition);
+
+        // Verificar si está en el checkpoint 5 o 7, dentro de la distancia de salto, y si se dio la acción de salto
         if ((currentCheckpointIndex == 5 || currentCheckpointIndex == 7) &&
             distanceToTarget <= jumpDistanceThreshold && isOnPlatform && !hasJumped)
         {
-            JumpTowardsTarget();
-            AddReward(2.0f);
-            hasJumped = true;
+            if (jumpAction == 1) // Si la acción de salto está activada
+            {
+                JumpTowardsTarget();
+                AddReward(2.0f);
+                hasJumped = true;
+            }
         }
 
         AddReward(-distanceToTarget * 0.001f);
+
+        print("Velocity" + rb.velocity);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -83,6 +89,10 @@ public class AgentJump : Agent
         var continuousActions = actionsOut.ContinuousActions;
         continuousActions[0] = Input.GetAxis("Vertical");
         continuousActions[1] = Input.GetAxis("Horizontal");
+
+        // Asigna el salto en la heurística
+        var discreteActions = actionsOut.DiscreteActions;
+        discreteActions[0] = Input.GetKey(KeyCode.Space) ? 1 : 0; // Presiona espacio para saltar
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -111,8 +121,7 @@ public class AgentJump : Agent
                 // Asigna una recompensa exponencial usando el multiplicador
                 AddReward(1.0f * rewardMultiplier);
 
-                // Incrementa el multiplicador exponencialmente (por ejemplo, multiplicando por 1.5)
-                rewardMultiplier *= 2f;
+                rewardMultiplier *= 1.5f;
 
                 currentCheckpointIndex++;
                 target.localPosition = checkpoints[currentCheckpointIndex].localPosition;
@@ -128,7 +137,7 @@ public class AgentJump : Agent
         }
         else if (other.CompareTag("Obstacle"))
         {
-            AddReward(-2.0f);
+            AddReward(-3.0f);
             EndEpisode();
         }
     }
