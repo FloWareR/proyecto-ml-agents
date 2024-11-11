@@ -10,7 +10,7 @@ public class AgentJump : Agent
     public float moveSpeed = 5f;
     public float turnSpeed = 200f;
     public float jumpForce = 10f;
-    public float jumpDistanceThreshold = 5f;
+    public float jumpDistanceThreshold = 10f;
     private Rigidbody rb;
 
     private int currentCheckpointIndex = 0;
@@ -136,6 +136,6 @@ public class AgentJump : Agent
     private void JumpTowardsTarget()
     {
         Vector3 jumpDirection = (target.position - transform.position).normalized;
-        rb.AddForce(new Vector3(jumpDirection.x, 1, jumpDirection.z) * jumpForce, ForceMode.Impulse);
+        rb.AddForce(new Vector3(jumpDirection.x, 1.5f, jumpDirection.z) * jumpForce, ForceMode.Impulse);
     }
 }
