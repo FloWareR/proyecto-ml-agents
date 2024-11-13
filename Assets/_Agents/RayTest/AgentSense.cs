@@ -13,7 +13,7 @@ public class GapJumpAgent : Agent
 
     private int isTargetReached = 0;
 
-    // Altura m韓ima antes de considerar que el agente ha ca韉o de la plataforma
+    // Altura m铆nima antes de considerar que el agente ha ca铆do de la plataforma
     public float fallThreshold = -1.0f;
 
     public override void Initialize()
@@ -23,21 +23,21 @@ public class GapJumpAgent : Agent
 
     public override void OnEpisodeBegin()
     {
-        // Reiniciar posici髇, velocidad y rotaci髇 del agente y del objetivo
+        // Reiniciar posici贸n, velocidad y rotaci贸n del agente y del objetivo
         rb.velocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         transform.localPosition = new Vector3(0, 0.5f, -8);
 
-        // Coloca el objetivo en la primera posici髇
+        // Coloca el objetivo en la primera posici贸n
         target.localPosition = checkpoints[0].localPosition;
         isTargetReached = 0;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Observaciones relacionadas con la posici髇 del objetivo
+        // Observaciones relacionadas con la posici贸n del objetivo
         Vector3 directionToTarget = (target.position - transform.position).normalized;
-        sensor.AddObservation(directionToTarget); // Direcci髇 hacia el objetivo
+        sensor.AddObservation(directionToTarget); // Direcci贸n hacia el objetivo
         sensor.AddObservation(Vector3.Distance(transform.position, target.position)); // Distancia al objetivo
     }
 
@@ -45,23 +45,23 @@ public class GapJumpAgent : Agent
     {
         // Control de movimiento basado en acciones del modelo
         float moveInput = Mathf.Clamp(actions.ContinuousActions[0], -1f, 1f); // Valor de avance/retroceso
-        float turnInput = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f); // Valor de rotaci髇
+        float turnInput = Mathf.Clamp(actions.ContinuousActions[1], -1f, 1f); // Valor de rotaci贸n
 
         // Movimiento del agente usando Rigidbody
         Vector3 forwardMove = transform.forward * moveInput * moveSpeed * Time.deltaTime;
         rb.MovePosition(rb.position + forwardMove);
 
-        // Rotaci髇 del agente usando Rigidbody
+        // Rotaci贸n del agente usando Rigidbody
         float turn = turnInput * turnSpeed * Time.deltaTime;
         rb.MoveRotation(rb.rotation * Quaternion.Euler(0, turn, 0));
 
-        // Penalizaci髇 por el tiempo que pasa (0.01 por segundo)
+        // Penalizaci贸n por el tiempo que pasa (0.01 por segundo)
         AddReward(-0.01f * Time.deltaTime);
 
-        // Verificar si el agente ha ca韉o de la plataforma
+        // Verificar si el agente ha ca铆do de la plataforma
         if (transform.localPosition.y < fallThreshold)
         {
-            // Penalizaci髇 por caer de la plataforma
+            // Penalizaci贸n por caer de la plataforma
             SetReward(-5f);
             EndEpisode(); // Terminar el episodio
         }
@@ -111,7 +111,7 @@ public class GapJumpAgent : Agent
         }
         else if (other.CompareTag("Obstacle"))
         {
-            // Penalizaci髇 por chocar con un obst醕ulo
+            // Penalizaci贸n por chocar con un obst谩culo
             AddReward(-3.0f);
             EndEpisode();
         }
