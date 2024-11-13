@@ -11,6 +11,9 @@ TagManager:
   - Goal
   - Obstacle
   - Gap
+  - target1
+  - target2
+  - target3
   layers:
   - Default
   - TransparentFX
