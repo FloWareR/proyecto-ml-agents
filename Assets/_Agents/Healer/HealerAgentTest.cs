@@ -8,7 +8,7 @@ public class HealthTargetAgent : Agent
 {
     public Transform[] targetTransforms; 
     private float[] targetHealth;
-    private float healthDecreaseRate = 0.1f;
+    private float healthDecreaseRate = 0.5f;
     private float moveSpeed = 2f;
 
     public TextMeshPro[] targetHealthTexts;
@@ -19,6 +19,7 @@ public class HealthTargetAgent : Agent
     private float correctHealMultiplier = 1.0f;
     private float incorrectHealMultiplier = 1.0f;
     private int consecutiveIncorrectHeals = 0;
+    private int previousAction = -1; // -1 to indicate no action has been taken yet
 
     public override void Initialize()
     {
@@ -57,70 +58,88 @@ public class HealthTargetAgent : Agent
         sensor.AddObservation(transform.localPosition);
     }
 
-    public override void OnActionReceived(ActionBuffers actions)
+public override void OnActionReceived(ActionBuffers actions)
+{
+    int action = actions.DiscreteActions[0];
+
+    // Perform action based on the received action index
+    switch (action)
     {
-        int action = actions.DiscreteActions[0];
+        case 0: // Stay Still
+            Debug.Log("Agent Action: Stay Still");
+            AddReward(-0.1f); // Small penalty for staying still
+            break;
 
-        // Perform action based on the received action index
-        switch (action)
-        {
-            case 0: // Stay Still
-                Debug.Log("Agent Action: Stay Still");
-                AddReward(-0.1f); // Small penalty for staying still
-                break;
+        case 1: // Move to Target 1
+            Debug.Log("Agent Action: Move to Target 1");
+            MoveToTarget(0);
+            break;
 
-            case 1: // Move to Target 1
-                Debug.Log("Agent Action: Move to Target 1");
-                MoveToTarget(0);
-                break;
+        case 2: // Move to Target 2
+            Debug.Log("Agent Action: Move to Target 2");
+            MoveToTarget(1);
+            break;
 
-            case 2: // Move to Target 2
-                Debug.Log("Agent Action: Move to Target 2");
-                MoveToTarget(1);
-                break;
+        case 3: // Move to Target 3
+            Debug.Log("Agent Action: Move to Target 3");
+            MoveToTarget(2);
+            break;
 
-            case 3: // Move to Target 3
-                Debug.Log("Agent Action: Move to Target 3");
-                MoveToTarget(2);
-                break;
-
-            default:
-                Debug.LogWarning("Agent selected an invalid action!");
-                AddReward(-0.1f); // Penalize for invalid actions
-                return;
-        }
-
-        // Check if the agent has fallen off the map (y position < -0.4f)
-        if (transform.position.y < -0.4f)
-        {
-            Debug.Log("Agent fell off the map! Ending episode with negative reward.");
-            AddReward(-1.0f); // Negative reward for falling off the map
-            EndEpisode();
+        default:
+            Debug.LogWarning("Agent selected an invalid action!");
+            AddReward(-0.1f); // Penalize for invalid actions
             return;
-        }
+    }
 
-        // Gradually decrease health of all targets and update their displays
-        bool targetWithZeroHealth = false;
-        for (int i = 0; i < targetHealth.Length; i++)
+    // Check if the agent has fallen off the map (y position < -0.4f)
+    if (transform.position.y < -0.4f)
+    {
+        Debug.Log("Agent fell off the map! Ending episode with negative reward.");
+        AddReward(-1.0f); // Negative reward for falling off the map
+        EndEpisode();
+        return;
+    }
+
+    // Gradually decrease health of all targets and update their displays
+    bool targetWithZeroHealth = false;
+    for (int i = 0; i < targetHealth.Length; i++)
+    {
+        targetHealth[i] -= healthDecreaseRate * Time.deltaTime;
+        targetHealth[i] = Mathf.Max(targetHealth[i], 0);
+        UpdateHealthDisplay(i);
+
+        // If any target's health reaches 0, mark this and end the episode
+        if (targetHealth[i] <= 0)
         {
-            targetHealth[i] -= healthDecreaseRate * Time.deltaTime;
-            targetHealth[i] = Mathf.Max(targetHealth[i], 0);
-            UpdateHealthDisplay(i);
-
-            // If any target's health reaches 0, mark this and end the episode
-            if (targetHealth[i] <= 0)
-            {
-                targetWithZeroHealth = true;
-            }
-        }
-
-        // End the episode only if any target's health reached 0
-        if (targetWithZeroHealth)
-        {
-            Debug.Log("A target's health reached 0. Ending episode.");
-            EndEpisode();
+            targetWithZeroHealth = true;
         }
     }
+
+    // End the episode only if any target's health reached 0
+    if (targetWithZeroHealth)
+    {
+        Debug.Log("A target's health reached 0. Ending episode.");
+        EndEpisode();
+    }
+
+    // **Exploration Reward Logic**
+    // Apply a slight penalty or reward to encourage the agent to choose diverse actions.
+    // For example, if the agent repeatedly chooses the same action, give a small negative reward.
+    float explorationPenalty = 0.01f;
+    if (action == previousAction) // Track the last action
+    {
+        AddReward(-explorationPenalty); // Apply exploration penalty for repeating actions
+    }
+
+    // Store the current action for the next step
+    previousAction = action;
+
+    // Debug: Print the current points after each action
+    Debug.Log($"Current Score: {GetCumulativeReward()}");
+
+    // Print out the points and reward at each step
+    Debug.Log($"Agent's current points: {GetCumulativeReward()}");
+}
 
 
     private void MoveToTarget(int targetIndex)
