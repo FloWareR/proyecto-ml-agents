@@ -8,17 +8,15 @@ public class HealthTargetAgent : Agent
 {
     public Transform[] targetTransforms; 
     private float[] targetHealth;
-    private float healthDecreaseRate = 0.5f;
-    private float moveSpeed = 2f;
+    private float healthDecreaseRate = 3.5f;
+    private float moveSpeed = 9.5f;
 
     public TextMeshPro[] targetHealthTexts;
     public TextMeshPro pointsCounterText;
 
-    private int currentTargetIndex;
     private int score = 0; 
     private float correctHealMultiplier = 1.0f;
     private float incorrectHealMultiplier = 1.0f;
-    private int consecutiveIncorrectHeals = 0;
     private int previousAction = -1; // -1 to indicate no action has been taken yet
 
     public override void Initialize()
@@ -33,16 +31,14 @@ public class HealthTargetAgent : Agent
         // Randomize health for each target and update the health display
         for (int i = 0; i < targetHealth.Length; i++)
         {
-            targetHealth[i] = Random.Range(10f, 100f);
+            targetHealth[i] = Random.Range(15f, 100f);
             UpdateHealthDisplay(i);
         }
 
         // Reset variables for a new episode
-        currentTargetIndex = GetLowestHealthTarget();
         score = 0;
         correctHealMultiplier = 1.0f;
         incorrectHealMultiplier = 1.0f;
-        consecutiveIncorrectHeals = 0;
         UpdatePointsDisplay();
 
         Debug.Log("Episode Started. Agent is looking for the lowest health target.");
@@ -54,100 +50,60 @@ public class HealthTargetAgent : Agent
         {
             sensor.AddObservation(health);
         }
-
+        
         sensor.AddObservation(transform.localPosition);
+        sensor.AddObservation(targetTransforms[GetLowestHealthTarget()].localPosition);
     }
 
-public override void OnActionReceived(ActionBuffers actions)
-{
-    int action = actions.DiscreteActions[0];
-
-    // Perform action based on the received action index
-    switch (action)
+    public override void OnActionReceived(ActionBuffers actions)
     {
-        case 0: // Stay Still
-            Debug.Log("Agent Action: Stay Still");
-            AddReward(-0.1f); // Small penalty for staying still
-            break;
+        int action = actions.DiscreteActions[0];
+        int lowestIndex = GetLowestHealthTarget();
 
-        case 1: // Move to Target 1
-            Debug.Log("Agent Action: Move to Target 1");
-            MoveToTarget(0);
-            break;
-
-        case 2: // Move to Target 2
-            Debug.Log("Agent Action: Move to Target 2");
-            MoveToTarget(1);
-            break;
-
-        case 3: // Move to Target 3
-            Debug.Log("Agent Action: Move to Target 3");
-            MoveToTarget(2);
-            break;
-
-        default:
-            Debug.LogWarning("Agent selected an invalid action!");
-            AddReward(-0.1f); // Penalize for invalid actions
-            return;
-    }
-
-    // Check if the agent has fallen off the map (y position < -0.4f)
-    if (transform.position.y < -0.4f)
-    {
-        Debug.Log("Agent fell off the map! Ending episode with negative reward.");
-        AddReward(-1.0f); // Negative reward for falling off the map
-        EndEpisode();
-        return;
-    }
-
-    // Gradually decrease health of all targets and update their displays
-    bool targetWithZeroHealth = false;
-    for (int i = 0; i < targetHealth.Length; i++)
-    {
-        targetHealth[i] -= healthDecreaseRate * Time.deltaTime;
-        targetHealth[i] = Mathf.Max(targetHealth[i], 0);
-        UpdateHealthDisplay(i);
-
-        // If any target's health reaches 0, mark this and end the episode
-        if (targetHealth[i] <= 0)
+        if (action == lowestIndex + 1)
         {
-            targetWithZeroHealth = true;
+            MoveToTarget(lowestIndex);
+            AddReward(0.1f); // Reward for moving to the correct target
+        }
+        else
+        {
+            AddReward(-0.05f); // Small penalty for moving to the wrong target
+        }
+
+        if (transform.position.y < -0.4f)
+        {
+            Debug.Log("Agent fell off the map! Ending episode with negative reward.");
+            AddReward(-1.0f); // Negative reward for falling off the map
+            EndEpisode();
+            return;
+        }
+
+        bool targetWithZeroHealth = false;
+        for (int i = 0; i < targetHealth.Length; i++)
+        {
+            targetHealth[i] -= healthDecreaseRate * Time.deltaTime;
+            targetHealth[i] = Mathf.Max(targetHealth[i], 0);
+            UpdateHealthDisplay(i);
+
+            if (targetHealth[i] <= 0)
+            {
+                targetWithZeroHealth = true;
+            }
+        }
+
+        if (targetWithZeroHealth)
+        {
+            Debug.Log("A target's health reached 0. Ending episode.");
+            EndEpisode();
         }
     }
-
-    // End the episode only if any target's health reached 0
-    if (targetWithZeroHealth)
-    {
-        Debug.Log("A target's health reached 0. Ending episode.");
-        EndEpisode();
-    }
-
-    // **Exploration Reward Logic**
-    // Apply a slight penalty or reward to encourage the agent to choose diverse actions.
-    // For example, if the agent repeatedly chooses the same action, give a small negative reward.
-    float explorationPenalty = 0.01f;
-    if (action == previousAction) // Track the last action
-    {
-        AddReward(-explorationPenalty); // Apply exploration penalty for repeating actions
-    }
-
-    // Store the current action for the next step
-    previousAction = action;
-
-    // Debug: Print the current points after each action
-    Debug.Log($"Current Score: {GetCumulativeReward()}");
-
-    // Print out the points and reward at each step
-    Debug.Log($"Agent's current points: {GetCumulativeReward()}");
-}
-
 
     private void MoveToTarget(int targetIndex)
     {
         if (targetIndex < 0 || targetIndex >= targetTransforms.Length)
         {
             Debug.LogWarning("Invalid target index selected by agent.");
-            AddReward(-0.1f); // Penalize for invalid target index
+            AddReward(-0.1f);
             return;
         }
 
@@ -155,39 +111,37 @@ public override void OnActionReceived(ActionBuffers actions)
         transform.position += direction * (moveSpeed * Time.deltaTime);
 
         float distanceToTarget = Vector3.Distance(transform.position, targetTransforms[targetIndex].position);
-        if (distanceToTarget < 1.0f)
+        AddReward(0.01f / distanceToTarget); // Reward for getting closer
+
+        if (distanceToTarget < 1.5f)
         {
-            Debug.Log($"Agent reached Target {targetIndex + 1}");
-
-            // Check if this is the correct target (lowest health)
-            if (targetIndex == GetLowestHealthTarget())
-            {
-                // Heal the target by 50 HP
-                targetHealth[targetIndex] += 50; 
-                targetHealth[targetIndex] = Mathf.Min(targetHealth[targetIndex], 100f); // Cap at 100 HP
-                Debug.Log($"Healed Target {targetIndex + 1}. New Health: {targetHealth[targetIndex]}");
-
-                score += (int)(5 * correctHealMultiplier); // 5 points for correct heal with multiplier
-                correctHealMultiplier += 0.5f; // Increase multiplier for consecutive correct heals
-                UpdatePointsDisplay();
-
-                // After healing the correct target, move on to the next lowest health target
-                currentTargetIndex = GetLowestHealthTarget();
-                consecutiveIncorrectHeals = 0; // Reset incorrect heal count
-
-                Debug.Log($"Next target is Target {currentTargetIndex + 1} with {targetHealth[currentTargetIndex]} HP");
-            }
-            else
-            {
-                Debug.Log("Agent healed the wrong target! Penalizing...");
-                score -= (int)(10 * incorrectHealMultiplier); // 10 points penalty for wrong heal with multiplier
-                incorrectHealMultiplier += 0.5f; // Increase penalty multiplier for consecutive wrong heals
-                UpdatePointsDisplay();
-            }
+            HealTarget(targetIndex);
         }
     }
 
-    // Get the index of the target with the lowest health
+    private void HealTarget(int targetIndex)
+    {
+        if (targetIndex == GetLowestHealthTarget())
+        {
+            targetHealth[targetIndex] += Random.Range(15f, 45f);
+            targetHealth[targetIndex] = Mathf.Min(targetHealth[targetIndex], 100f);
+            Debug.Log($"Healed Target {targetIndex + 1}. New Health: {targetHealth[targetIndex]}");
+
+            score += (int)(5 * correctHealMultiplier);
+            correctHealMultiplier += 0.5f;
+            UpdatePointsDisplay();
+
+            Debug.Log($"Next target is Target {GetLowestHealthTarget() + 1} with {targetHealth[GetLowestHealthTarget()]} HP");
+        }
+        else
+        {
+            Debug.Log("Agent healed the wrong target! Penalizing...");
+            score -= (int)(10 * incorrectHealMultiplier);
+            incorrectHealMultiplier += 0.5f;
+            UpdatePointsDisplay();
+        }
+    }
+
     private int GetLowestHealthTarget()
     {
         int lowestIndex = 0;
@@ -204,7 +158,6 @@ public override void OnActionReceived(ActionBuffers actions)
         return lowestIndex;
     }
 
-    // Method to update the TextMeshPro component with current health
     private void UpdateHealthDisplay(int index)
     {
         if (targetHealthTexts != null && targetHealthTexts.Length > index)
@@ -213,7 +166,6 @@ public override void OnActionReceived(ActionBuffers actions)
         }
     }
 
-    // Method to update the points counter display
     private void UpdatePointsDisplay()
     {
         if (pointsCounterText != null)
