@@ -858,7 +858,7 @@ PrefabInstance:
     - target: {fileID: 2906593546191745650, guid: eb135138d1f820147a879aa19df8d173, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 8561987b1dce471479a152265a9f0329, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 5157463423894927363, guid: eb135138d1f820147a879aa19df8d173, type: 3}
       propertyPath: m_Name
       value: Env
