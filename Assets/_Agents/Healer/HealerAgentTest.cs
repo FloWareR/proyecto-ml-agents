@@ -1,4 +1,4 @@
-using UnityEngine;
+ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
@@ -107,11 +107,14 @@ public class HealthTargetAgent : Agent
         {
             // Penalize for moving further away from the objective
             AddReward(-0.05f); // You can adjust the penalty here as needed
+            Debug.Log("FURTHER");
         }
         else
         {
             // Reward for moving closer to the objective
             AddReward(0.01f); // Adjust reward based on how much reward you want
+            Debug.Log("Closer");
+
         }
 
         // Update the previous distance to the objective and the position
