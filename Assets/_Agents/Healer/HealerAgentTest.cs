@@ -100,6 +100,18 @@ public class HealthTargetAgent : Agent
         {
             AddReward(-0.1f); 
         }
+        
+        Vector3 directionToObjective = (objective.transform.position - transform.position).normalized;
+        float alignment = Vector3.Dot(moveDirection, directionToObjective);
+        if (alignment > 0.8f) // Buen alineamiento
+        {
+            AddReward(0.05f);
+        }
+        else
+        {
+            AddReward(-0.02f); // Penalización menor por desviarse
+        }
+
 
         // Check if the agent is moving away from the objective
         float currentDistanceToObjective = Vector3.Distance(transform.position, objective.transform.position);
